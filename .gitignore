@@ -218,3 +218,10 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Mission Control project
+data/
+node_modules/
+frontend/dist/
+*.db
+.DS_Store
