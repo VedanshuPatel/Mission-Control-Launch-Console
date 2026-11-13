@@ -112,10 +112,18 @@ def _draft_prompt(
 
 
 def _review_prompt(facts: dict[str, Any], draft: DraftReply) -> str:
+    facts_json = json.dumps(
+        {
+            "verdict": facts.get("verdict"),
+            "violations": facts.get("violations"),
+            "flags": facts.get("flags"),
+        },
+        default=str,
+    )
     return "\n\n".join(
         [
             "Review this draft against facts. Code verdict must be respected.",
-            f"Facts: {json.dumps({'verdict': facts.get('verdict'), 'violations': facts.get('violations'), 'flags': facts.get('flags')}, default=str)}",
+            f"Facts: {facts_json}",
             f"Draft: {draft.model_dump_json()}",
             prompts.wrap_engineer_note(str(facts.get("note", ""))),
         ]

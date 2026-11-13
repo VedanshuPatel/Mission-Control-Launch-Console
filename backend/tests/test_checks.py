@@ -78,7 +78,8 @@ def test_heuristic_matches_each_pattern_family(example):
 
 def test_heuristic_does_not_match_plain_note():
     assert detection_heuristic(PLAIN_NOTE) is False
-    assert detection_heuristic("Valve PV-7 chattered twice at T-85, pressure nominal after.") is False
+    plain = "Valve PV-7 chattered twice at T-85, pressure nominal after."
+    assert detection_heuristic(plain) is False
 
 
 @pytest.mark.asyncio
