@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine, text
 
@@ -58,10 +59,11 @@ def test_report_survives_app_restart(tmp_path: Path):
             assert body[key] == fields[key]
 
 
-def test_startup_marks_stale_processing_failed_and_retry(tmp_path: Path):
-    db_path = tmp_path / "stale.db"
+@pytest.mark.parametrize("stale_status", ["processing", "received"])
+def test_startup_marks_stale_inflight_failed_and_retry(tmp_path: Path, stale_status: str):
+    db_path = tmp_path / f"stale-{stale_status}.db"
     database_url = f"sqlite:///{db_path}"
-    # Create schema and a stale processing row without going through the API.
+    # Create schema and a stale in-flight row without going through the API.
     engine = create_engine(database_url)
     Base.metadata.create_all(engine)
     with engine.begin() as conn:
@@ -76,10 +78,11 @@ def test_startup_marks_stale_processing_failed_and_retry(tmp_path: Path):
                   '11111111-1111-1111-1111-111111111111',
                   '2026-01-01T00:00:00+00:00',
                   'Ada', 'PROP', 10.0, 20.0, 99.0,
-                  'stale', 'processing', NULL, 0, 0, 0, 0, '0.000000'
+                  'stale', :status, NULL, 0, 0, 0, 0, '0.000000'
                 )
                 """
-            )
+            ),
+            {"status": stale_status},
         )
     engine.dispose()
 

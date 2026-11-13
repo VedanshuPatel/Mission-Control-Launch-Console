@@ -39,11 +39,14 @@ def make_session_factory(engine: Engine) -> sessionmaker[Session]:
 
 def init_db(engine: Engine) -> None:
     Base.metadata.create_all(engine)
-    # Mark reports interrupted mid-pipeline as failed.
+    # Mark reports interrupted mid-flight as failed so POST /retry can recover.
+    # Includes "received" (crash after file, before claim) and "processing".
     with Session(engine) as session:
         from sqlalchemy import select
 
-        stale = session.scalars(select(Report).where(Report.status == "processing")).all()
+        stale = session.scalars(
+            select(Report).where(Report.status.in_(("received", "processing")))
+        ).all()
         for report in stale:
             report.status = "failed"
             report.error = "interrupted by restart"
