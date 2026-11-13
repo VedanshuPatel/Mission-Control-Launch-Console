@@ -11,6 +11,9 @@ make start   # installs deps, builds UI, serves app at http://localhost:8000
 make test    # runs all backend + frontend tests (no network, no API key)
 ```
 
+Optional: `make smoke` files the hidden-instruction report, approves it,
+restarts the server, and checks persistence (fake model, temp DB).
+
 ## Prerequisites
 
 - [uv](https://docs.astral.sh/uv/getting-started/installation/) (installs Python 3.12)
@@ -32,23 +35,42 @@ app runs in **demo mode** with the fake model.
 Tool choices (reason, rejected alternative, customer concern per layer):
 see [`TOOL_CHOICES.md`](TOOL_CHOICES.md).
 
+Default model: `gemini-3.8-flash`.
+
+## Architecture
+
+```text
+Browser (React/Vite)
+   │  POST/GET /api/reports…  approve
+   ▼
+FastAPI ──► SQLite (WAL)     report + briefing + trace steps
+   │
+   ▼
+Orchestrator
+  classify → limits (code) → brief-by (code)
+       → checks (3× concurrent) → draft/review (≤3)
+   │
+   ▼
+LLMClient ── FakeLLM (demo/tests) or GeminiLLM (google-genai)
+```
+
+A report is committed to SQLite **before** any model call. Only the
+Flight Director approval endpoint writes `status=approved`.
+
 ## Status
 
-Scaffold through backend-api are on `main`. Branch `feature/console-ui`
-builds the Flight Director console: filing form, report list/detail,
-per-step trace cards, banners, and human-only approval. Full smoke lands
-with the docs/smoke branch; `scripts/smoke.sh` currently checks health only.
+Scaffold through console-ui are on `main`. This docs/smoke branch adds
+the full `scripts/smoke.sh` path and final README / tool-choices polish.
 
 `make test-backend` only needs `uv`; `make test-frontend` only needs Node —
-so each CI job can stay lean. `make install` / `make start` still require both.
-
-Default model: `gemini-3.8-flash` (see `.env.example` and `TOOL_CHOICES.md`).
+so each CI job can stay lean. `make install` / `make start` / `make smoke`
+still require both.
 
 ## Requirements map
 
-Filled in as features land. "Sent to review" (hidden instructions): a
-flagged note is reviewed by the model reviewer **and** tagged for the
-human Flight Director (`needs_human_review`, acknowledgement required).
+"Sent to review" (hidden instructions): a flagged note is reviewed by the
+model reviewer **and** tagged for the human Flight Director
+(`needs_human_review`, acknowledgement required).
 
 | Requirement | Where | Tests |
 |---|---|---|
@@ -68,17 +90,32 @@ human Flight Director (`needs_human_review`, acknowledgement required).
 | Filing form + list | `frontend/src/components/ReportForm.tsx`, `ReportList.tsx` | `ReportForm.test.tsx`, `ReportList.test.tsx` |
 | Detail + trace cards | `frontend/src/components/ReportDetail.tsx`, `TraceList.tsx` | `ReportDetail.test.tsx`, `TraceList.test.tsx` |
 | Approval + banners | `frontend/src/components/ApprovalPanel.tsx`, `Banners.tsx` | `ApprovalPanel.test.tsx`, `Banners.test.tsx` |
+| End-to-end smoke | `scripts/smoke.sh` | `make smoke` (CI `readme-commands`) |
 
 ## Test run
 
 ```text
 $ make test
 cd backend && uv run --frozen pytest
-........................................................................ [ 54%]
-.............................................................            [100%]
+........................................................................ [ 52%]
+.................................................................        [100%]
 137 passed in 0.76s
 cd frontend && npx vitest run
 
  Test Files  7 passed (7)
       Tests  14 passed (14)
 ```
+
+## Live Gemini (manual)
+
+Not run in CI. With a free Google AI Studio key in `.env`:
+
+```bash
+cp .env.example .env   # set GEMINI_API_KEY, LLM_PROVIDER=auto
+make start
+```
+
+File a report in the console; the detail view shows the same ordered
+trace (classify → limits → brief-by → checks → draft/review) with
+Gemini token counts and paid-tier cost estimates. Demo mode
+(`LLM_PROVIDER=fake` or empty key) exercises the identical path offline.
