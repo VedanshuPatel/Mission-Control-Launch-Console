@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useEffectEvent, useState } from 'react'
 import { getReport } from '../api'
 import type { Report } from '../types'
 import { ApprovalPanel } from './ApprovalPanel'
@@ -29,6 +29,10 @@ function briefByCountdown(report: Report): string {
 export function ReportDetail({ reportId, onUpdated }: Props) {
   const [report, setReport] = useState<Report | null>(null)
   const [error, setError] = useState<string | null>(null)
+  // Keep parent sync out of effect deps so polling stays on a 2s cadence.
+  const notifyUpdated = useEffectEvent((next: Report) => {
+    onUpdated(next)
+  })
 
   useEffect(() => {
     let cancelled = false
@@ -39,7 +43,7 @@ export function ReportDetail({ reportId, onUpdated }: Props) {
         const next = await getReport(reportId)
         if (cancelled) return null
         setReport(next)
-        onUpdated(next)
+        notifyUpdated(next)
         setError(null)
         if (isProcessing(next.status)) {
           if (timer == null) {
@@ -65,7 +69,7 @@ export function ReportDetail({ reportId, onUpdated }: Props) {
       cancelled = true
       if (timer != null) clearInterval(timer)
     }
-  }, [reportId, onUpdated])
+  }, [reportId])
 
   if (error) {
     return <p className="field-error" role="alert">{error}</p>

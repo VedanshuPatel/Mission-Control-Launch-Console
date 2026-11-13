@@ -232,6 +232,7 @@ button:disabled {
 }
 
 .trace-kind,
+.trace-started,
 .trace-tokens,
 .trace-cost,
 .trace-summary {

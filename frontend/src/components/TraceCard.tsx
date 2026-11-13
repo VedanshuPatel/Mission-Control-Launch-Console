@@ -18,6 +18,7 @@ export function TraceCard({ step }: Props) {
         <h3>{step.name}</h3>
       </header>
       <p className="trace-kind">{kindLine(step)}</p>
+      <p className="trace-started">started: {new Date(step.started_at).toLocaleString()}</p>
       <p className="trace-tokens">
         input tokens: {step.input_tokens} · output tokens: {step.output_tokens}
       </p>
