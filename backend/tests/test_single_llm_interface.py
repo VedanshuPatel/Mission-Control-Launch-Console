@@ -34,6 +34,5 @@ def test_google_genai_imported_only_in_gemini_adapter():
             continue
         if path.resolve() != ALLOWED.resolve():
             offenders.append(str(path.relative_to(APP_ROOT.parent)))
-    assert offenders == [], "google.genai must only be imported in app/llm/gemini.py:\n" + "\n".join(
-        offenders
-    )
+    msg = "google.genai must only be imported in app/llm/gemini.py:\n"
+    assert offenders == [], msg + "\n".join(offenders)

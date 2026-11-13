@@ -57,14 +57,15 @@ human Flight Director (`needs_human_review`, acknowledgement required).
 | Launch limits (plain code) | `backend/app/domain/limits.py` | `test_limits.py`, `test_domain_isolation.py` |
 | Brief-by time | `backend/app/domain/brief_time.py` | `test_brief_time.py` |
 | Cost at paid-tier rates | `backend/app/domain/cost.py` | `test_cost.py` |
+| One LLM interface + fake (offline) | `backend/app/llm/` | `test_llm_fake.py`, `test_no_network.py`, `test_single_llm_interface.py`, `test_gemini_adapter.py` |
 
 ## Test run
 
 ```text
 $ make test
 cd backend && uv run --frozen pytest
-.........................................                                [100%]
-41 passed in 0.02s
+.......................................................                  [100%]
+55 passed in 0.17s
 cd frontend && npx vitest run
 
  Test Files  1 passed (1)
