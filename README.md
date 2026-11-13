@@ -34,10 +34,11 @@ see [`TOOL_CHOICES.md`](TOOL_CHOICES.md).
 
 ## Status
 
-Scaffold and domain rules are on `main`. Branch `feature/llm-layer` adds the
-`LLMClient` seam, FakeLLM (tests/demo), and Gemini adapter. Pipeline, API,
-and console UI follow. Full smoke (file → approve → restart) lands with the
-docs/smoke branch; `scripts/smoke.sh` currently checks health only.
+Scaffold, domain rules, and LLM layer are on `main`. Branch
+`feature/model-steps` adds classification, concurrent checks, and the
+draft/review loop (FakeLLM only). API wiring and console UI follow. Full
+smoke lands with the docs/smoke branch; `scripts/smoke.sh` currently
+checks health only.
 
 `make test-backend` only needs `uv`; `make test-frontend` only needs Node —
 so each CI job can stay lean. `make install` / `make start` still require both.
