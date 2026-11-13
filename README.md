@@ -52,4 +52,13 @@ human Flight Director (`needs_human_review`, acknowledgement required).
 
 ## Test run
 
-Paste `make test` output here once the scaffold CI job is green locally.
+```text
+$ make test
+cd backend && uv run --frozen pytest
+.                                                                        [100%]
+1 passed in 0.01s
+cd frontend && npx vitest run
+
+ Test Files  1 passed (1)
+      Tests  1 passed (1)
+```
