@@ -34,10 +34,11 @@ see [`TOOL_CHOICES.md`](TOOL_CHOICES.md).
 
 ## Status
 
-Scaffold and domain rules are on `main`. Branch `feature/llm-layer` adds the
-`LLMClient` seam, FakeLLM (tests/demo), and Gemini adapter. Pipeline, API,
-and console UI follow. Full smoke (file → approve → restart) lands with the
-docs/smoke branch; `scripts/smoke.sh` currently checks health only.
+Scaffold, domain rules, and LLM layer are on `main`. Branch
+`feature/model-steps` adds classification, concurrent checks, and the
+draft/review loop (FakeLLM only). API wiring and console UI follow. Full
+smoke lands with the docs/smoke branch; `scripts/smoke.sh` currently
+checks health only.
 
 `make test-backend` only needs `uv`; `make test-frontend` only needs Node —
 so each CI job can stay lean. `make install` / `make start` still require both.
@@ -58,14 +59,18 @@ human Flight Director (`needs_human_review`, acknowledgement required).
 | Brief-by time | `backend/app/domain/brief_time.py` | `test_brief_time.py` |
 | Cost at paid-tier rates | `backend/app/domain/cost.py` | `test_cost.py` |
 | One LLM interface + fake (offline) | `backend/app/llm/` | `test_llm_fake.py`, `test_no_network.py`, `test_single_llm_interface.py`, `test_gemini_adapter.py` |
+| Sorting (structured + fallback) | `backend/app/pipeline/classify.py` | `test_classify.py` |
+| Three checks + hidden instructions | `backend/app/pipeline/checks.py` | `test_checks.py` |
+| Draft/review loop (pending only) | `backend/app/pipeline/briefing.py` | `test_briefing_loop.py` |
 
 ## Test run
 
 ```text
 $ make test
 cd backend && uv run --frozen pytest
-.............................................................            [100%]
-61 passed in 0.16s
+........................................................................ [ 73%]
+..........................                                               [100%]
+98 passed in 0.21s
 cd frontend && npx vitest run
 
  Test Files  1 passed (1)
