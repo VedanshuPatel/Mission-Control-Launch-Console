@@ -31,3 +31,13 @@ def test_build_llm_returns_fake_for_auto_without_key():
     settings = Settings(llm_provider="auto", gemini_api_key="", gemini_model="gemini-3.8-flash")
     llm = build_llm(settings)
     assert isinstance(llm, FakeLLM)
+
+
+def test_build_llm_rejects_unknown_provider():
+    settings = Settings(llm_provider="ollama", gemini_api_key="", gemini_model="gemini-3.8-flash")
+    with pytest.raises(ValueError, match="Unknown LLM provider"):
+        build_llm(settings)
+
+
+def test_app_state_llm_is_injected_fake(app, fake_llm):
+    assert app.state.llm is fake_llm

@@ -55,31 +55,28 @@ class GeminiLLM:
             response_mime_type="application/json",
             response_schema=schema,
         )
-        last_exc: BaseException | None = None
-        async with self._sem:
-            for attempt in range(_MAX_TRIES):
-                try:
+        for attempt in range(_MAX_TRIES):
+            try:
+                async with self._sem:
                     response = await self._client.aio.models.generate_content(
                         model=self.model,
                         contents=prompt,
                         config=config,
                     )
-                    usage = getattr(response, "usage_metadata", None)
-                    prompt_tokens = int(getattr(usage, "prompt_token_count", 0) or 0)
-                    candidates = int(getattr(usage, "candidates_token_count", 0) or 0)
-                    thoughts = int(getattr(usage, "thoughts_token_count", 0) or 0)
-                    text = getattr(response, "text", None) or ""
-                    return LLMResult(
-                        text=text,
-                        input_tokens=prompt_tokens,
-                        output_tokens=candidates + thoughts,
-                        model=self.model,
-                    )
-                except Exception as exc:  # noqa: BLE001 — narrow via _is_retryable
-                    last_exc = exc
-                    if _is_retryable(exc) and attempt < _MAX_TRIES - 1:
-                        await asyncio.sleep(2**attempt)
-                        continue
-                    raise
-        assert last_exc is not None
-        raise last_exc
+                usage = getattr(response, "usage_metadata", None)
+                prompt_tokens = int(getattr(usage, "prompt_token_count", 0) or 0)
+                candidates = int(getattr(usage, "candidates_token_count", 0) or 0)
+                thoughts = int(getattr(usage, "thoughts_token_count", 0) or 0)
+                text = getattr(response, "text", None) or ""
+                return LLMResult(
+                    text=text,
+                    input_tokens=prompt_tokens,
+                    output_tokens=candidates + thoughts,
+                    model=self.model,
+                )
+            except Exception as exc:  # noqa: BLE001 — narrow via _is_retryable
+                if _is_retryable(exc) and attempt < _MAX_TRIES - 1:
+                    await asyncio.sleep(2**attempt)
+                    continue
+                raise
+        raise RuntimeError("GeminiLLM.complete exhausted retries without result")

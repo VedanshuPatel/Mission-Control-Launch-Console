@@ -6,7 +6,7 @@ from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
-from google.genai.errors import ClientError
+from google.genai.errors import ClientError, ServerError
 from pydantic import BaseModel
 
 from app.config import Settings
@@ -75,6 +75,49 @@ async def test_retries_429_then_gives_up(monkeypatch):
     assert generate.await_count == 3
     assert len(sleeps) == 2
     assert sleeps[0] < sleeps[1]
+
+
+@pytest.mark.asyncio
+async def test_retries_5xx_then_gives_up(monkeypatch):
+    sleeps: list[float] = []
+
+    async def fake_sleep(delay: float) -> None:
+        sleeps.append(delay)
+
+    monkeypatch.setattr("app.llm.gemini.asyncio.sleep", fake_sleep)
+
+    generate = AsyncMock(side_effect=ServerError(503, {"error": {"message": "busy"}}))
+    client = MagicMock()
+    client.aio.models.generate_content = generate
+
+    llm = GeminiLLM(api_key="dummy", model="gemini-3.8-flash", client=client)
+    with pytest.raises(ServerError):
+        await llm.complete(task="classify", system="s", prompt="p", schema=_Reply)
+
+    assert generate.await_count == 3
+    assert len(sleeps) == 2
+
+
+@pytest.mark.asyncio
+async def test_succeeds_after_429_retry(monkeypatch):
+    async def fake_sleep(delay: float) -> None:
+        return None
+
+    monkeypatch.setattr("app.llm.gemini.asyncio.sleep", fake_sleep)
+
+    generate = AsyncMock(
+        side_effect=[
+            ClientError(429, {"error": {"message": "rate"}}),
+            _stub_response(text='{"ok": true}', prompt=1, candidates=1, thoughts=0),
+        ]
+    )
+    client = MagicMock()
+    client.aio.models.generate_content = generate
+
+    llm = GeminiLLM(api_key="dummy", model="gemini-3.8-flash", client=client)
+    result = await llm.complete(task="classify", system="s", prompt="p", schema=_Reply)
+    assert result.text == '{"ok": true}'
+    assert generate.await_count == 2
 
 
 def test_build_llm_returns_gemini_for_provider_gemini():

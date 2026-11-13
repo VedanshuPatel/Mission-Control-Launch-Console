@@ -36,10 +36,13 @@ async def test_scripted_responses_in_order_and_records_calls():
 
 
 @pytest.mark.asyncio
-async def test_scripted_exception_is_raised():
+async def test_scripted_exception_is_raised_and_recorded():
     llm = FakeLLM(script={"classify": [RuntimeError("boom")]})
     with pytest.raises(RuntimeError, match="boom"):
         await llm.complete(task="classify", system="s", prompt="p", schema=_Reply)
+    assert len(llm.calls) == 1
+    assert llm.calls[0].task == "classify"
+    assert llm.calls[0].prompt == "p"
 
 
 @pytest.mark.asyncio
@@ -57,13 +60,31 @@ async def test_callable_script_receives_prompt():
 
 @pytest.mark.asyncio
 async def test_token_counts_are_deterministic():
-    llm = FakeLLM()
     system, prompt, text = "abcd", "efgh", "ijkl"
-    # Force scripted text length via script
     llm = FakeLLM(script={"classify": [text]})
     result = await llm.complete(task="classify", system=system, prompt=prompt, schema=_Reply)
     assert result.input_tokens == len(system + prompt) // 4
     assert result.output_tokens == len(text) // 4
+
+
+@pytest.mark.asyncio
+async def test_default_happy_path_when_script_empty():
+    llm = FakeLLM()
+    result = await llm.complete(task="classify", system="s", prompt="p", schema=_Reply)
+    assert "subsystem" in result.text
+    assert "severity" in result.text
+
+
+@pytest.mark.asyncio
+async def test_non_check_task_skips_barrier():
+    barrier = asyncio.Barrier(3)
+    llm = FakeLLM(barrier=barrier)
+    # Would deadlock if classify awaited the barrier alone.
+    result = await asyncio.wait_for(
+        llm.complete(task="classify", system="s", prompt="p", schema=_Reply),
+        timeout=0.5,
+    )
+    assert result.model == "fake-model"
 
 
 @pytest.mark.asyncio
