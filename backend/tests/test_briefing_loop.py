@@ -185,3 +185,51 @@ async def test_pipeline_never_sets_approved():
     result = await draft_briefing(llm, facts=_facts())
     assert result.status == "pending"
     assert result.status != "approved"
+
+
+@pytest.mark.asyncio
+async def test_body_missing_violation_reading_fails_code_check():
+    body = "Anomaly noted. Recommend hold for review."  # no wind_knots
+    llm = FakeLLM(
+        script={
+            "draft_1": [_draft(body)],
+            "review_1": [_review(True)],
+            "draft_2": [_draft(GOOD_BODY)],
+            "review_2": [_review(True)],
+        }
+    )
+    result = await draft_briefing(llm, facts=_facts())
+    assert result.rounds_used == 2
+
+
+@pytest.mark.asyncio
+async def test_invalid_reviewer_json_counts_as_failed():
+    llm = FakeLLM(
+        script={
+            "draft_1": [_draft(GOOD_BODY)],
+            "review_1": ["not-json"],
+            "draft_2": [_draft(GOOD_BODY)],
+            "review_2": [_review(True)],
+        }
+    )
+    result = await draft_briefing(llm, facts=_facts())
+    assert result.rounds_used == 2
+    assert result.review_passed is True
+
+
+@pytest.mark.asyncio
+async def test_previous_draft_kept_when_later_draft_invalid():
+    llm = FakeLLM(
+        script={
+            "draft_1": [_draft(GOOD_BODY)],
+            "review_1": [_review(False, "fix it")],
+            "draft_2": ["not-json"],
+            "review_2": [_review(False)],
+            "draft_3": [_draft(GOOD_BODY + " Fixed.")],
+            "review_3": [_review(True)],
+        }
+    )
+    await draft_briefing(llm, facts=_facts())
+    draft3 = next(c for c in llm.calls if c.task == "draft_3")
+    assert "Previous draft JSON" in draft3.prompt
+    assert "wind_knots" in draft3.prompt

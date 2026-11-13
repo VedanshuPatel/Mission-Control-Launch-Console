@@ -85,7 +85,8 @@ async def _check_injection(llm: LLMClient, note: str) -> InjectionResult:
 
     if heuristic and not evidence:
         evidence = "deterministic injection heuristic matched"
-    flagged = model_flagged or heuristic or unavailable
+    # Unavailable forces human review, but is not itself an injection flag.
+    flagged = model_flagged or heuristic
     return InjectionResult(
         flagged=flagged,
         evidence=evidence,

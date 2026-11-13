@@ -68,9 +68,9 @@ human Flight Director (`needs_human_review`, acknowledgement required).
 ```text
 $ make test
 cd backend && uv run --frozen pytest
-........................................................................ [ 79%]
-...................                                                      [100%]
-91 passed in 0.22s
+........................................................................ [ 73%]
+..........................                                               [100%]
+98 passed in 0.21s
 cd frontend && npx vitest run
 
  Test Files  1 passed (1)

@@ -51,12 +51,8 @@ def _header(facts: dict[str, Any]) -> str:
     return f"VERDICT: {label}"
 
 
-def _assemble(facts: dict[str, Any], draft: DraftReply | None, *, template: bool) -> str:
+def _assemble(facts: dict[str, Any], draft: DraftReply) -> str:
     header = _header(facts)
-    if draft is None or template:
-        action = "Await Flight Director decision."
-        body = "Automated template briefing; no valid model draft was available."
-        return f"{header}\n\n{body}\n\nRecommended action: {action}"
     return (
         f"{header}\n\n{draft.headline}\n\n{draft.body}\n\n"
         f"Recommended action: {draft.recommended_action}"
@@ -178,7 +174,7 @@ async def draft_briefing(llm: LLMClient, *, facts: dict[str, Any]) -> BriefingRe
                 )
             except Exception:  # noqa: BLE001
                 pass
-            prev = draft
+            # Keep prev as the last valid draft (do not wipe with None).
             continue
 
         code_issues = _code_check_issues(draft, facts)
@@ -221,7 +217,7 @@ async def draft_briefing(llm: LLMClient, *, facts: dict[str, Any]) -> BriefingRe
         used_template = True
         last_valid = _template_draft(facts)
 
-    text = _assemble(facts, last_valid, template=used_template)
+    text = _assemble(facts, last_valid)
     return BriefingResult(
         text=text,
         rounds_used=rounds_used,

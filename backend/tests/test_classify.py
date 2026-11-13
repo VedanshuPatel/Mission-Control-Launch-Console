@@ -51,6 +51,13 @@ async def test_casing_and_whitespace_normalized():
         "not-json",
         '{"severity":"high","rationale":"missing subsystem"}',
         RuntimeError("adapter down"),
+        json.dumps(
+            {
+                "subsystem": "propulsion",
+                "severity": "low",
+                "rationale": "x" * 301,
+            }
+        ),
     ],
 )
 @pytest.mark.asyncio

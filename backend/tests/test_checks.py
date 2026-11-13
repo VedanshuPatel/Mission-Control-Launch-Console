@@ -92,6 +92,30 @@ async def test_invalid_check_reply_sets_unavailable_and_forces_review():
     results = await run_checks(llm, note=PLAIN_NOTE)
     assert results.missing.check_unavailable is True
     assert results.needs_human_review is True
+    assert "check_unavailable" in results.review_reasons
+
+
+@pytest.mark.asyncio
+async def test_injection_unavailable_forces_review_without_injection_label():
+    llm = FakeLLM(
+        script={
+            "check_injection": ["not-json"],
+        }
+    )
+    results = await run_checks(llm, note=PLAIN_NOTE)
+    assert results.injection.check_unavailable is True
+    assert results.injection.flagged is False
+    assert results.needs_human_review is True
+    assert "possible_injected_instructions" not in results.review_reasons
+    assert "check_unavailable" in results.review_reasons
+
+
+@pytest.mark.asyncio
+async def test_tone_unavailable_forces_review():
+    llm = FakeLLM(script={"check_tone": ["not-json"]})
+    results = await run_checks(llm, note=PLAIN_NOTE)
+    assert results.tone.check_unavailable is True
+    assert results.needs_human_review is True
 
 
 @pytest.mark.asyncio
@@ -105,3 +129,12 @@ async def test_missing_and_tone_parsed():
     results = await run_checks(llm, note=PLAIN_NOTE)
     assert results.missing.missing == ["timestamp"]
     assert results.tone.level == "elevated"
+    assert "missing_details" in results.review_reasons
+
+
+@pytest.mark.asyncio
+async def test_panic_tone_forces_review():
+    llm = FakeLLM(script={"check_tone": [json.dumps({"level": "panic"})]})
+    results = await run_checks(llm, note=PLAIN_NOTE)
+    assert "panic_tone" in results.review_reasons
+    assert results.needs_human_review is True
