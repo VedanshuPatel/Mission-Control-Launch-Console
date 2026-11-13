@@ -42,7 +42,11 @@ def test_post_report_returns_201_and_saves_fields(client, settings):
 @pytest.mark.parametrize(
     ("payload", "field", "message"),
     [
-        ({k: v for k, v in VALID.items() if k != "wind_knots"}, "wind_knots", "wind_knots is required"),
+        (
+            {k: v for k, v in VALID.items() if k != "wind_knots"},
+            "wind_knots",
+            "wind_knots is required",
+        ),
         ({**VALID, "wind_knots": "abc"}, "wind_knots", "wind_knots must be a number"),
         ({**VALID, "wind_knots": "25"}, "wind_knots", "wind_knots must be a number"),
         ({**VALID, "wind_knots": True}, "wind_knots", "wind_knots must be a number"),
@@ -82,7 +86,8 @@ def test_nan_reading_rejected(client, settings):
         headers={"Content-Type": "application/json"},
     )
     assert response.status_code == 422
-    assert {"field": "fuel_pct", "message": "fuel_pct must be a number"} in response.json()["errors"]
+    errors = response.json()["errors"]
+    assert {"field": "fuel_pct", "message": "fuel_pct must be a number"} in errors
     assert _count_reports(settings.database_url) == before
 
 

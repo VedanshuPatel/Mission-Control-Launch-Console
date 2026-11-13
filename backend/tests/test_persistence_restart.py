@@ -12,7 +12,6 @@ from app.llm.fake import FakeLLM
 from app.main import create_app
 from app.orm import Base
 
-
 VALID = {
     "engineer_name": "Ada",
     "station": "PROP",

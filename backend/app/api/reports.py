@@ -3,15 +3,16 @@
 from __future__ import annotations
 
 import uuid
+from collections.abc import Callable
 from datetime import UTC, datetime
-from typing import Any, Callable
+from typing import Any
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request
 from sqlalchemy import select
 from sqlalchemy.orm import Session, selectinload
 
 from app.orm import Report
-from app.schemas import ReportIn, ReportOut, TraceStepOut, BriefingOut
+from app.schemas import BriefingOut, ReportIn, ReportOut, TraceStepOut
 
 router = APIRouter(prefix="/api/reports", tags=["reports"])
 

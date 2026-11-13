@@ -8,32 +8,17 @@ from typing import Any
 from fastapi import FastAPI
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
+
+from app.api.approvals import router as approvals_router
 from app.api.errors import register_exception_handlers
 from app.api.reports import router as reports_router
 from app.config import Settings
 from app.db import init_db, make_engine, make_session_factory
 from app.domain.cost import PRICES, UnknownModelPrice
 from app.llm.factory import ensure_llm
-from app.orm import Report
+from app.pipeline.orchestrator import make_process_report
 
 FRONTEND_DIST = Path(__file__).resolve().parents[2] / "frontend" / "dist"
-
-
-def _stub_process_report(session_factory):  # noqa: ANN001
-    """Placeholder processor used until the orchestrator lands (4b)."""
-
-    def process(report_id: str) -> None:
-        session = session_factory()
-        try:
-            report = session.get(Report, report_id)
-            if report is None:
-                return
-            report.status = "awaiting_approval"
-            session.commit()
-        finally:
-            session.close()
-
-    return process
 
 
 def create_app(settings: Settings | None = None, llm: Any = None) -> FastAPI:
@@ -54,10 +39,11 @@ def create_app(settings: Settings | None = None, llm: Any = None) -> FastAPI:
     app.state.llm = ensure_llm(settings, llm)
     app.state.engine = engine
     app.state.session_factory = session_factory
-    app.state.process_report = _stub_process_report(session_factory)
+    app.state.process_report = make_process_report(session_factory, app.state.llm)
 
     register_exception_handlers(app)
     app.include_router(reports_router)
+    app.include_router(approvals_router)
 
     @app.get("/api/health")
     def health() -> dict[str, str]:

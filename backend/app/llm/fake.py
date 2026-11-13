@@ -37,6 +37,9 @@ class RecordedCall:
     schema: type[BaseModel]
     started_at: datetime
     ended_at: datetime
+    text: str | None = None
+    input_tokens: int = 0
+    output_tokens: int = 0
 
 
 @dataclass
@@ -80,6 +83,8 @@ class FakeLLM:
             text = item
 
         ended = datetime.now(UTC)
+        in_tok = len(system + prompt) // 4
+        out_tok = len(text) // 4
         self.calls.append(
             RecordedCall(
                 task=task,
@@ -88,12 +93,15 @@ class FakeLLM:
                 schema=schema,
                 started_at=started,
                 ended_at=ended,
+                text=text,
+                input_tokens=in_tok,
+                output_tokens=out_tok,
             )
         )
         return LLMResult(
             text=text,
-            input_tokens=len(system + prompt) // 4,
-            output_tokens=len(text) // 4,
+            input_tokens=in_tok,
+            output_tokens=out_tok,
             model=self.model,
         )
 

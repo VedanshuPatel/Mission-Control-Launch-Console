@@ -61,15 +61,19 @@ human Flight Director (`needs_human_review`, acknowledgement required).
 | Sorting (structured + fallback) | `backend/app/pipeline/classify.py` | `test_classify.py` |
 | Three checks + hidden instructions | `backend/app/pipeline/checks.py` | `test_checks.py` |
 | Draft/review loop (pending only) | `backend/app/pipeline/briefing.py` | `test_briefing_loop.py` |
+| Filing + restart persistence | `backend/app/api/reports.py` | `test_reports_api.py`, `test_persistence_restart.py` |
+| Orchestrator trace + cost | `backend/app/pipeline/orchestrator.py` | `test_orchestrator.py` |
+| Hidden instruction E2E | `backend/app/pipeline/` | `test_hidden_instruction.py` |
+| Human-only approval | `backend/app/api/approvals.py` | `test_approval.py` |
 
 ## Test run
 
 ```text
 $ make test
 cd backend && uv run --frozen pytest
-........................................................................ [ 73%]
-..........................                                               [100%]
-98 passed in 0.21s
+........................................................................ [ 54%]
+.............................................................            [100%]
+133 passed in 0.70s
 cd frontend && npx vitest run
 
  Test Files  1 passed (1)
