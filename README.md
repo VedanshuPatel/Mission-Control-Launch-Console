@@ -39,6 +39,9 @@ rules, LLM layer, pipeline, API, and full console UI land on later
 branches. Full smoke (file → approve → restart) lands with the docs/smoke
 branch; `scripts/smoke.sh` currently checks health only.
 
+`make test-backend` only needs `uv`; `make test-frontend` only needs Node —
+so each CI job can stay lean. `make install` / `make start` still require both.
+
 ## Requirements map
 
 Filled in as features land. "Sent to review" (hidden instructions): a
