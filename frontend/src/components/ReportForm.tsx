@@ -1,4 +1,5 @@
-import { FormEvent, useState } from 'react'
+import { useState } from 'react'
+import type { FormEvent } from 'react'
 import { ApiError, createReport } from '../api'
 import type { FieldError, Report, ReportCreate } from '../types'
 
