@@ -146,7 +146,9 @@ def retry_report(
     report = db.scalar(select(Report).where(Report.id == report_id))
     if report is None:
         raise HTTPException(status_code=404, detail="Report not found")
-    if report.status not in {"failed", "received"}:
+    # Only failed reports are retryable. Allowing "received" would race with
+    # an in-flight first job that has not yet claimed processing.
+    if report.status != "failed":
         raise HTTPException(status_code=409, detail="Report is not retryable")
     report.status = "received"
     report.error = None

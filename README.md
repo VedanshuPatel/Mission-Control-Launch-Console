@@ -73,7 +73,7 @@ $ make test
 cd backend && uv run --frozen pytest
 ........................................................................ [ 54%]
 .............................................................            [100%]
-133 passed in 0.70s
+135 passed in 0.70s
 cd frontend && npx vitest run
 
  Test Files  1 passed (1)

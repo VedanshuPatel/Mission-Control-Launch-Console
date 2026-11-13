@@ -3,11 +3,16 @@
 from __future__ import annotations
 
 import json
+from dataclasses import dataclass
 
 import pytest
+from pydantic import BaseModel
 
 from app.domain.cost import report_cost
+from app.llm.base import LLMResult
 from app.llm.fake import FakeLLM
+from app.llm.recording import RecordingLLM
+from app.pipeline.orchestrator import make_process_report
 
 VALID = {
     "engineer_name": "Ada",
@@ -116,3 +121,76 @@ def test_brief_by_through_api(client, severity, wind, minutes):
     assert body["brief_by_minutes"] == minutes
     if wind > 25:
         assert body["effective_severity"] == "high"
+
+
+def test_retry_rejects_non_failed_status(client):
+    created = client.post("/api/reports", json=VALID)
+    report_id = created.json()["id"]
+    _wait_done(client, report_id)
+    retry = client.post(f"/api/reports/{report_id}/retry")
+    assert retry.status_code == 409
+    assert retry.json()["detail"] == "Report is not retryable"
+
+
+@dataclass
+class _StubLLM:
+    """Gemini-like client: returns tokens, has no shared .calls list."""
+
+    model: str = "fake-model"
+
+    async def complete(
+        self,
+        *,
+        task: str,
+        system: str,
+        prompt: str,
+        schema: type[BaseModel],
+    ) -> LLMResult:
+        del system, prompt
+        if task == "classify":
+            text = json.dumps(
+                {
+                    "subsystem": "propulsion",
+                    "severity": "low",
+                    "rationale": "ok",
+                }
+            )
+        elif task == "check_injection":
+            text = json.dumps({"flagged": False, "evidence": ""})
+        elif task == "check_missing_details":
+            text = json.dumps({"missing": []})
+        elif task == "check_tone":
+            text = json.dumps({"level": "calm"})
+        elif task.startswith("draft"):
+            text = json.dumps(
+                {
+                    "headline": "Brief",
+                    "body": "All readings within limits for this check.",
+                    "recommended_action": "Proceed.",
+                }
+            )
+        elif task.startswith("review"):
+            text = json.dumps({"passed": True, "issues": [], "feedback": ""})
+        else:
+            text = "{}"
+        return LLMResult(
+            text=text, input_tokens=11, output_tokens=7, model=self.model
+        )
+
+
+def test_trace_tokens_work_without_shared_calls_list(client):
+    stub = _StubLLM()
+    assert not hasattr(stub, "calls")
+    client.app.state.llm = stub
+    client.app.state.process_report = make_process_report(
+        client.app.state.session_factory, stub
+    )
+    created = client.post("/api/reports", json=VALID)
+    body = _wait_done(client, created.json()["id"])
+    model_steps = [s for s in body["trace_steps"] if s["kind"] == "model"]
+    assert model_steps
+    assert all(s["input_tokens"] == 11 and s["output_tokens"] == 7 for s in model_steps)
+    assert body["total_input_tokens"] == 11 * len(model_steps)
+    # RecordingLLM isolates per run
+    recorder = RecordingLLM(inner=stub)
+    assert recorder.calls == []

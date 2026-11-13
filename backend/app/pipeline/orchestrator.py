@@ -7,13 +7,14 @@ from datetime import UTC, datetime
 from decimal import Decimal
 from typing import Any
 
-from sqlalchemy import select
+from sqlalchemy import select, update
 from sqlalchemy.orm import Session, sessionmaker
 
 from app.domain.brief_time import brief_by_at, brief_minutes, effective_severity
 from app.domain.cost import report_cost, step_cost
 from app.domain.limits import evaluate_limits
 from app.llm.base import LLMClient
+from app.llm.recording import RecordingLLM
 from app.orm import Briefing, Report, TraceStep
 from app.pipeline.briefing import draft_briefing
 from app.pipeline.checks import run_checks
@@ -64,47 +65,52 @@ def _add_step(
     return step
 
 
-def _call_tokens(llm: Any, call_before: int, task: str | None = None) -> tuple[int, int, str, Any]:
-    model = getattr(llm, "model", "fake-model")
-    calls = list(getattr(llm, "calls", []))[call_before:]
+def _call_tokens(
+    llm: RecordingLLM, call_before: int, task: str | None = None
+) -> tuple[int, int, str, Any]:
+    model = llm.model
+    calls = list(llm.calls)[call_before:]
     if task is not None:
         calls = [c for c in calls if c.task == task]
     if not calls:
         return 0, 0, model, None
     c = calls[-1] if task is None else calls[0]
-    return (
-        getattr(c, "input_tokens", len(c.system + c.prompt) // 4),
-        getattr(c, "output_tokens", 0),
-        model,
-        c,
-    )
+    return c.input_tokens, c.output_tokens, model, c
 
 
 def make_process_report(session_factory: sessionmaker[Session], llm: LLMClient):
-    def process_report(report_id: str) -> None:
-        import asyncio
-
-        asyncio.run(_process(report_id, session_factory, llm))
+    async def process_report(report_id: str) -> None:
+        # Per-run recorder so concurrent reports never share a call log, and
+        # Gemini (which has no .calls) still yields tokens into the trace.
+        recorder = RecordingLLM(inner=llm)
+        await _process(report_id, session_factory, recorder)
 
     return process_report
 
 
 async def _process(
-    report_id: str, session_factory: sessionmaker[Session], llm: LLMClient
+    report_id: str, session_factory: sessionmaker[Session], llm: RecordingLLM
 ) -> None:
     session = session_factory()
     try:
+        # Claim only if still queued — blocks duplicate workers from racing.
+        claimed = session.execute(
+            update(Report)
+            .where(Report.id == report_id, Report.status == "received")
+            .values(status="processing", error=None)
+        )
+        session.commit()
+        if claimed.rowcount != 1:
+            return
+
         report = session.get(Report, report_id)
         if report is None:
             return
-        report.status = "processing"
-        report.error = None
-        session.commit()
 
         seq = 0
 
         # 1. classify
-        before = len(getattr(llm, "calls", []))
+        before = len(llm.calls)
         started = _now()
         classification = await classify_report(llm, note=report.note)
         ended = _now()
@@ -188,7 +194,7 @@ async def _process(
         report.brief_by_at = by_at
 
         # 4-6 concurrent checks
-        before = len(getattr(llm, "calls", []))
+        before = len(llm.calls)
         checks = await run_checks(llm, note=report.note)
         for name, result_obj in [
             ("check_injection", checks.injection),
@@ -241,9 +247,9 @@ async def _process(
             "brief_by": f"{minutes} minutes",
             "note": report.note,
         }
-        before = len(getattr(llm, "calls", []))
+        before = len(llm.calls)
         briefing = await draft_briefing(llm, facts=facts)
-        for c in list(getattr(llm, "calls", []))[before:]:
+        for c in list(llm.calls)[before:]:
             seq += 1
             _add_step(
                 session,
@@ -251,7 +257,7 @@ async def _process(
                 seq=seq,
                 name=c.task,
                 kind="model",
-                model=getattr(llm, "model", "fake-model"),
+                model=llm.model,
                 input_tokens=c.input_tokens,
                 output_tokens=c.output_tokens,
                 started_at=c.started_at,
