@@ -34,11 +34,10 @@ see [`TOOL_CHOICES.md`](TOOL_CHOICES.md).
 
 ## Status
 
-Scaffold, domain rules, and LLM layer are on `main`. Branch
-`feature/model-steps` adds classification, concurrent checks, and the
-draft/review loop (FakeLLM only). API wiring and console UI follow. Full
-smoke lands with the docs/smoke branch; `scripts/smoke.sh` currently
-checks health only.
+Scaffold through model-steps are on `main`. Branch `feature/backend-api`
+wires SQLite persistence, filing/validation, the orchestrator trace, and
+human-only approval. Console UI follows. Full smoke lands with the
+docs/smoke branch; `scripts/smoke.sh` currently checks health only.
 
 `make test-backend` only needs `uv`; `make test-frontend` only needs Node —
 so each CI job can stay lean. `make install` / `make start` still require both.
