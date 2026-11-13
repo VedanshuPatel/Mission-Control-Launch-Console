@@ -46,4 +46,4 @@ jobs:
         with:
           node-version: 22
       - run: make test
-        # make smoke is added in branch 6 once scripts/smoke.sh is complete
+      - run: make smoke
