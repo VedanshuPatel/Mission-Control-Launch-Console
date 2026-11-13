@@ -18,7 +18,7 @@ class Settings(BaseSettings):
 
     llm_provider: str = "auto"
     gemini_api_key: str = ""
-    gemini_model: str = "gemini-2.5-flash"
+    gemini_model: str = "gemini-3.8-flash"
     database_url: str = f"sqlite:///{REPO_ROOT / 'data' / 'mission_control.db'}"
 
     def resolved_provider(self) -> str:
