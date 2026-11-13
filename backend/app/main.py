@@ -10,6 +10,7 @@ from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
 from app.config import Settings
+from app.llm.factory import ensure_llm
 
 FRONTEND_DIST = Path(__file__).resolve().parents[2] / "frontend" / "dist"
 
@@ -18,7 +19,7 @@ def create_app(settings: Settings | None = None, llm: Any = None) -> FastAPI:
     settings = settings or Settings()
     app = FastAPI(title="Mission Control", version="0.1.0")
     app.state.settings = settings
-    app.state.llm = llm
+    app.state.llm = ensure_llm(settings, llm)
 
     @app.get("/api/health")
     def health() -> dict[str, str]:

@@ -9,6 +9,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from app.config import Settings
+from app.llm.fake import FakeLLM
 from app.main import create_app
 
 
@@ -30,8 +31,13 @@ def settings(tmp_path: Path) -> Settings:
 
 
 @pytest.fixture
-def app(settings: Settings):
-    return create_app(settings)
+def fake_llm() -> FakeLLM:
+    return FakeLLM()
+
+
+@pytest.fixture
+def app(settings: Settings, fake_llm: FakeLLM):
+    return create_app(settings, llm=fake_llm)
 
 
 @pytest.fixture
