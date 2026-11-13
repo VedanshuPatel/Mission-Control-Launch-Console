@@ -34,11 +34,10 @@ see [`TOOL_CHOICES.md`](TOOL_CHOICES.md).
 
 ## Status
 
-Scaffold, domain rules, and LLM layer are on `main`. Branch
-`feature/model-steps` adds classification, concurrent checks, and the
-draft/review loop (FakeLLM only). API wiring and console UI follow. Full
-smoke lands with the docs/smoke branch; `scripts/smoke.sh` currently
-checks health only.
+Scaffold through model-steps are on `main`. Branch `feature/backend-api`
+wires SQLite persistence, filing/validation, the orchestrator trace, and
+human-only approval. Console UI follows. Full smoke lands with the
+docs/smoke branch; `scripts/smoke.sh` currently checks health only.
 
 `make test-backend` only needs `uv`; `make test-frontend` only needs Node —
 so each CI job can stay lean. `make install` / `make start` still require both.
@@ -62,15 +61,19 @@ human Flight Director (`needs_human_review`, acknowledgement required).
 | Sorting (structured + fallback) | `backend/app/pipeline/classify.py` | `test_classify.py` |
 | Three checks + hidden instructions | `backend/app/pipeline/checks.py` | `test_checks.py` |
 | Draft/review loop (pending only) | `backend/app/pipeline/briefing.py` | `test_briefing_loop.py` |
+| Filing + restart persistence | `backend/app/api/reports.py` | `test_reports_api.py`, `test_persistence_restart.py` |
+| Orchestrator trace + cost | `backend/app/pipeline/orchestrator.py` | `test_orchestrator.py` |
+| Hidden instruction E2E | `backend/app/pipeline/` | `test_hidden_instruction.py` |
+| Human-only approval | `backend/app/api/approvals.py` | `test_approval.py` |
 
 ## Test run
 
 ```text
 $ make test
 cd backend && uv run --frozen pytest
-........................................................................ [ 73%]
-..........................                                               [100%]
-98 passed in 0.21s
+........................................................................ [ 54%]
+.............................................................            [100%]
+137 passed in 0.76s
 cd frontend && npx vitest run
 
  Test Files  1 passed (1)

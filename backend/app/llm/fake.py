@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+from collections import deque
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
@@ -10,6 +11,9 @@ from datetime import UTC, datetime
 from pydantic import BaseModel
 
 from app.llm.base import LLMResult
+
+# Bound demo/fake process growth; tests rarely need more than a few dozen.
+_MAX_RECORDED_CALLS = 256
 
 ScriptItem = str | BaseException | Callable[[str], str]
 
@@ -37,6 +41,9 @@ class RecordedCall:
     schema: type[BaseModel]
     started_at: datetime
     ended_at: datetime
+    text: str | None = None
+    input_tokens: int = 0
+    output_tokens: int = 0
 
 
 @dataclass
@@ -44,7 +51,9 @@ class FakeLLM:
     script: dict[str, list[ScriptItem]] = field(default_factory=dict)
     barrier: asyncio.Barrier | None = None
     model: str = "fake-model"
-    calls: list[RecordedCall] = field(default_factory=list)
+    calls: deque[RecordedCall] = field(
+        default_factory=lambda: deque(maxlen=_MAX_RECORDED_CALLS)
+    )
     _cursors: dict[str, int] = field(default_factory=dict)
 
     async def complete(
@@ -80,6 +89,8 @@ class FakeLLM:
             text = item
 
         ended = datetime.now(UTC)
+        in_tok = len(system + prompt) // 4
+        out_tok = len(text) // 4
         self.calls.append(
             RecordedCall(
                 task=task,
@@ -88,12 +99,15 @@ class FakeLLM:
                 schema=schema,
                 started_at=started,
                 ended_at=ended,
+                text=text,
+                input_tokens=in_tok,
+                output_tokens=out_tok,
             )
         )
         return LLMResult(
             text=text,
-            input_tokens=len(system + prompt) // 4,
-            output_tokens=len(text) // 4,
+            input_tokens=in_tok,
+            output_tokens=out_tok,
             model=self.model,
         )
 

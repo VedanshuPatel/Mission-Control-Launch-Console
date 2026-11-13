@@ -9,17 +9,41 @@ from fastapi import FastAPI
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
+from app.api.approvals import router as approvals_router
+from app.api.errors import register_exception_handlers
+from app.api.reports import router as reports_router
 from app.config import Settings
+from app.db import init_db, make_engine, make_session_factory
+from app.domain.cost import PRICES, UnknownModelPrice
 from app.llm.factory import ensure_llm
+from app.pipeline.orchestrator import make_process_report
 
 FRONTEND_DIST = Path(__file__).resolve().parents[2] / "frontend" / "dist"
 
 
 def create_app(settings: Settings | None = None, llm: Any = None) -> FastAPI:
     settings = settings or Settings()
+    # Fail fast if the configured model has no price entry.
+    priced_model = (
+        "fake-model" if settings.resolved_provider() == "fake" else settings.gemini_model
+    )
+    if priced_model not in PRICES:
+        raise UnknownModelPrice(priced_model)
+
+    engine = make_engine(settings.database_url)
+    session_factory = make_session_factory(engine)
+    init_db(engine)
+
     app = FastAPI(title="Mission Control", version="0.1.0")
     app.state.settings = settings
     app.state.llm = ensure_llm(settings, llm)
+    app.state.engine = engine
+    app.state.session_factory = session_factory
+    app.state.process_report = make_process_report(session_factory, app.state.llm)
+
+    register_exception_handlers(app)
+    app.include_router(reports_router)
+    app.include_router(approvals_router)
 
     @app.get("/api/health")
     def health() -> dict[str, str]:
