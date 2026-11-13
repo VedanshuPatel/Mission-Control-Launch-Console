@@ -1,6 +1,6 @@
 .app {
   min-height: 100vh;
-  padding: 1.5rem 2rem;
+  padding: 1.5rem 2rem 3rem;
   font-family: "IBM Plex Sans", "Segoe UI", sans-serif;
   color: #e8eef5;
   background:
@@ -23,6 +23,273 @@
 }
 
 .app-main {
-  margin-top: 2rem;
+  margin-top: 1.5rem;
   color: #b0c0d0;
+}
+
+.layout {
+  display: grid;
+  gap: 1.75rem;
+  grid-template-columns: minmax(280px, 360px) 1fr;
+}
+
+@media (max-width: 900px) {
+  .layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+.sidebar,
+.detail-pane,
+.report-form,
+.report-list,
+.report-detail,
+.trace-list,
+.approval-panel,
+.briefing-block,
+.violations {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.report-form,
+.report-list,
+.report-detail,
+.approval-panel {
+  padding: 1rem 1.1rem;
+  border: 1px solid #243449;
+  background: rgba(12, 22, 36, 0.72);
+}
+
+.report-form h2,
+.report-list h2,
+.report-detail h2,
+.trace-list h2,
+.approval-panel h3,
+.briefing-block h3,
+.violations h3 {
+  margin: 0;
+  font-size: 1.05rem;
+  color: #e8eef5;
+}
+
+label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  font-size: 0.85rem;
+  color: #9eb1c6;
+}
+
+input,
+select,
+textarea,
+button {
+  font: inherit;
+}
+
+input,
+select,
+textarea {
+  padding: 0.45rem 0.55rem;
+  border: 1px solid #33465e;
+  border-radius: 2px;
+  background: #0a1420;
+  color: #e8eef5;
+}
+
+button {
+  align-self: start;
+  padding: 0.5rem 0.9rem;
+  border: 1px solid #3d6a9a;
+  border-radius: 2px;
+  background: #1a3f66;
+  color: #e8eef5;
+  cursor: pointer;
+}
+
+button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.field-error {
+  color: #ff8f8f;
+  font-size: 0.85rem;
+  margin: 0;
+}
+
+.muted {
+  color: #7f93a8;
+  margin: 0;
+}
+
+.report-list ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.report-row {
+  width: 100%;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 0.75rem;
+  align-items: center;
+  text-align: left;
+  background: #101b2b;
+  border-color: #2a3d55;
+}
+
+.report-row.selected {
+  border-color: #5b8fc7;
+}
+
+.needs-review {
+  color: #ffcc66;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
+
+.detail-header {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+.verdict-badge {
+  display: inline-block;
+  padding: 0.2rem 0.55rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  border: 1px solid currentColor;
+}
+
+.verdict-badge.go {
+  color: #6ddea0;
+}
+
+.verdict-badge.no-go {
+  color: #ff8f8f;
+}
+
+.verdict-badge.unknown {
+  color: #8fa3b8;
+}
+
+.detail-meta {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 0.75rem;
+  margin: 0;
+}
+
+.detail-meta dt {
+  font-size: 0.75rem;
+  color: #7f93a8;
+}
+
+.detail-meta dd {
+  margin: 0.15rem 0 0;
+  color: #e8eef5;
+}
+
+.briefing-text {
+  margin: 0;
+  padding: 0.75rem;
+  white-space: pre-wrap;
+  background: #0a1420;
+  border: 1px solid #243449;
+  color: #d7e4f2;
+}
+
+.trace-card {
+  padding: 0.75rem;
+  border: 1px solid #243449;
+  background: #0f1a29;
+}
+
+.trace-card header {
+  display: flex;
+  gap: 0.5rem;
+  align-items: baseline;
+}
+
+.trace-card h3 {
+  margin: 0;
+  font-size: 0.95rem;
+}
+
+.trace-seq {
+  color: #7f93a8;
+  font-size: 0.8rem;
+}
+
+.trace-kind,
+.trace-started,
+.trace-tokens,
+.trace-cost,
+.trace-summary {
+  margin: 0.25rem 0 0;
+  font-size: 0.85rem;
+}
+
+.trace-parallel {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  padding: 0.65rem;
+  border: 1px dashed #3a536f;
+}
+
+.parallel-label {
+  margin: 0;
+  font-size: 0.8rem;
+  color: #9eb1c6;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.ack-row {
+  flex-direction: row;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.banners {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  margin-top: 1rem;
+}
+
+.banner {
+  margin: 0;
+  padding: 0.55rem 0.75rem;
+  border: 1px solid #3a536f;
+  font-size: 0.9rem;
+}
+
+.banner.demo {
+  border-color: #6a5a2a;
+  color: #ffd978;
+  background: rgba(80, 60, 10, 0.35);
+}
+
+.banner.flags {
+  border-color: #7a4a20;
+  color: #ffb070;
+  background: rgba(70, 35, 10, 0.4);
+}
+
+.banner.reviewer {
+  border-color: #6a3a50;
+  color: #f0a0c0;
+  background: rgba(60, 20, 40, 0.4);
 }

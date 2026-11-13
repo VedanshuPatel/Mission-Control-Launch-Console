@@ -34,10 +34,10 @@ see [`TOOL_CHOICES.md`](TOOL_CHOICES.md).
 
 ## Status
 
-Scaffold through model-steps are on `main`. Branch `feature/backend-api`
-wires SQLite persistence, filing/validation, the orchestrator trace, and
-human-only approval. Console UI follows. Full smoke lands with the
-docs/smoke branch; `scripts/smoke.sh` currently checks health only.
+Scaffold through backend-api are on `main`. Branch `feature/console-ui`
+builds the Flight Director console: filing form, report list/detail,
+per-step trace cards, banners, and human-only approval. Full smoke lands
+with the docs/smoke branch; `scripts/smoke.sh` currently checks health only.
 
 `make test-backend` only needs `uv`; `make test-frontend` only needs Node —
 so each CI job can stay lean. `make install` / `make start` still require both.
@@ -65,6 +65,9 @@ human Flight Director (`needs_human_review`, acknowledgement required).
 | Orchestrator trace + cost | `backend/app/pipeline/orchestrator.py` | `test_orchestrator.py` |
 | Hidden instruction E2E | `backend/app/pipeline/` | `test_hidden_instruction.py` |
 | Human-only approval | `backend/app/api/approvals.py` | `test_approval.py` |
+| Filing form + list | `frontend/src/components/ReportForm.tsx`, `ReportList.tsx` | `ReportForm.test.tsx`, `ReportList.test.tsx` |
+| Detail + trace cards | `frontend/src/components/ReportDetail.tsx`, `TraceList.tsx` | `ReportDetail.test.tsx`, `TraceList.test.tsx` |
+| Approval + banners | `frontend/src/components/ApprovalPanel.tsx`, `Banners.tsx` | `ApprovalPanel.test.tsx`, `Banners.test.tsx` |
 
 ## Test run
 
@@ -76,6 +79,6 @@ cd backend && uv run --frozen pytest
 137 passed in 0.76s
 cd frontend && npx vitest run
 
- Test Files  1 passed (1)
-      Tests  1 passed (1)
+ Test Files  7 passed (7)
+      Tests  14 passed (14)
 ```
