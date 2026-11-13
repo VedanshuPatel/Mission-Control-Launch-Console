@@ -39,13 +39,37 @@ def test_exactly_on_each_limit_passes(wind_knots, temp_c, fuel_pct):
 @pytest.mark.parametrize(
     ("wind_knots", "temp_c", "fuel_pct", "reading", "value", "limit", "message"),
     [
-        (25.01, 20.0, 99.0, "wind_knots", 25.01, "<= 25", "wind_knots 25.01 exceeds limit of 25 knots"),
+        (
+            25.01,
+            20.0,
+            99.0,
+            "wind_knots",
+            25.01,
+            "<= 25",
+            "wind_knots 25.01 exceeds limit of 25 knots",
+        ),
         (26, 20.0, 99.0, "wind_knots", 26.0, "<= 25", "wind_knots 26 exceeds limit of 25 knots"),
         (10.0, 3.99, 99.0, "temp_c", 3.99, ">= 4", "temp_c 3.99 is below limit of 4 C"),
         (10.0, 3, 99.0, "temp_c", 3.0, ">= 4", "temp_c 3 is below limit of 4 C"),
-        (10.0, 20.0, 97.99, "fuel_pct", 97.99, "98..100", "fuel_pct 97.99 is below limit of 98 percent"),
+        (
+            10.0,
+            20.0,
+            97.99,
+            "fuel_pct",
+            97.99,
+            "98..100",
+            "fuel_pct 97.99 is below limit of 98 percent",
+        ),
         (10.0, 20.0, 97, "fuel_pct", 97.0, "98..100", "fuel_pct 97 is below limit of 98 percent"),
-        (10.0, 20.0, 100.01, "fuel_pct", 100.01, "98..100", "fuel_pct 100.01 exceeds limit of 100 percent"),
+        (
+            10.0,
+            20.0,
+            100.01,
+            "fuel_pct",
+            100.01,
+            "98..100",
+            "fuel_pct 100.01 exceeds limit of 100 percent",
+        ),
     ],
 )
 def test_just_past_each_limit_fails(
