@@ -54,14 +54,17 @@ human Flight Director (`needs_human_review`, acknowledgement required).
 |---|---|---|
 | Health / demo provider | `backend/app/main.py` | `test_health.py` |
 | Console title shell | `frontend/src/App.tsx` | `App.test.tsx` |
+| Launch limits (plain code) | `backend/app/domain/limits.py` | `test_limits.py`, `test_domain_isolation.py` |
+| Brief-by time | `backend/app/domain/brief_time.py` | `test_brief_time.py` |
+| Cost at paid-tier rates | `backend/app/domain/cost.py` | `test_cost.py` |
 
 ## Test run
 
 ```text
 $ make test
 cd backend && uv run --frozen pytest
-.                                                                        [100%]
-1 passed in 0.01s
+......................................                                   [100%]
+38 passed in 0.02s
 cd frontend && npx vitest run
 
  Test Files  1 passed (1)
