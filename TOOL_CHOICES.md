@@ -1,9 +1,11 @@
 # Tool choices — Mission Control
 
 Stack decisions for Meridian Launch Services' Go/No-Go Launch Console.
-Model ID and paid-tier rates are confirmed against Google AI docs when cost
-code lands (branch `feature/domain-rules`); free-tier Flash as of Nov 2026
-is listed as Gemini 3.8 Flash.
+
+**Model ID (checked 13 Nov 2026):** `gemini-3.8-flash` (free tier available).
+**Paid-tier list rates** (used for cost estimates; free tier bills $0):
+input **$0.75** / output **$3.75** per 1M tokens through 31 Dec 2026
+(source: https://ai.google.dev/gemini-api/docs/pricing).
 
 ## Back end
 

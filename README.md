@@ -32,15 +32,17 @@ app runs in **demo mode** with the fake model.
 Tool choices (reason, rejected alternative, customer concern per layer):
 see [`TOOL_CHOICES.md`](TOOL_CHOICES.md).
 
-## Status (Branch 0 — scaffold)
+## Status
 
-Walking skeleton: `/api/health`, React shell, Makefile, and CI. Domain
-rules, LLM layer, pipeline, API, and full console UI land on later
-branches. Full smoke (file → approve → restart) lands with the docs/smoke
+Scaffold is on `main`. Branch `feature/domain-rules` adds plain-code launch
+limits, brief-by time, and cost. LLM layer, pipeline, API, and console UI
+follow. Full smoke (file → approve → restart) lands with the docs/smoke
 branch; `scripts/smoke.sh` currently checks health only.
 
 `make test-backend` only needs `uv`; `make test-frontend` only needs Node —
 so each CI job can stay lean. `make install` / `make start` still require both.
+
+Default model: `gemini-3.8-flash` (see `.env.example` and `TOOL_CHOICES.md`).
 
 ## Requirements map
 
