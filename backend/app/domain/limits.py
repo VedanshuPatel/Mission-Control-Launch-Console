@@ -20,6 +20,14 @@ class LimitResult:
     violations: list[Violation]
 
 
+def _format_reading(value: float) -> str:
+    """Render readings without a trailing .0 (plan example: wind_knots 31)."""
+    as_float = float(value)
+    if as_float.is_integer():
+        return str(int(as_float))
+    return str(as_float)
+
+
 def evaluate_limits(wind_knots: float, temp_c: float, fuel_pct: float) -> LimitResult:
     """Return go/no_go from readings alone. No access to note or model output."""
     violations: list[Violation] = []
@@ -30,7 +38,7 @@ def evaluate_limits(wind_knots: float, temp_c: float, fuel_pct: float) -> LimitR
                 reading="wind_knots",
                 value=float(wind_knots),
                 limit="<= 25",
-                message=f"wind_knots {wind_knots} exceeds limit of 25 knots",
+                message=f"wind_knots {_format_reading(wind_knots)} exceeds limit of 25 knots",
             )
         )
 
@@ -40,7 +48,7 @@ def evaluate_limits(wind_knots: float, temp_c: float, fuel_pct: float) -> LimitR
                 reading="temp_c",
                 value=float(temp_c),
                 limit=">= 4",
-                message=f"temp_c {temp_c} is below limit of 4 C",
+                message=f"temp_c {_format_reading(temp_c)} is below limit of 4 C",
             )
         )
 
@@ -50,7 +58,7 @@ def evaluate_limits(wind_knots: float, temp_c: float, fuel_pct: float) -> LimitR
                 reading="fuel_pct",
                 value=float(fuel_pct),
                 limit="98..100",
-                message=f"fuel_pct {fuel_pct} is below limit of 98 percent",
+                message=f"fuel_pct {_format_reading(fuel_pct)} is below limit of 98 percent",
             )
         )
     elif fuel_pct > 100:
@@ -59,7 +67,7 @@ def evaluate_limits(wind_knots: float, temp_c: float, fuel_pct: float) -> LimitR
                 reading="fuel_pct",
                 value=float(fuel_pct),
                 limit="98..100",
-                message=f"fuel_pct {fuel_pct} exceeds limit of 100 percent",
+                message=f"fuel_pct {_format_reading(fuel_pct)} exceeds limit of 100 percent",
             )
         )
 
