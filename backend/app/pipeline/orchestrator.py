@@ -7,7 +7,7 @@ from datetime import UTC, datetime
 from decimal import Decimal
 from typing import Any
 
-from sqlalchemy import select, update
+from sqlalchemy import delete, select, update
 from sqlalchemy.orm import Session, sessionmaker
 
 from app.domain.brief_time import brief_by_at, brief_minutes, effective_severity
@@ -106,6 +106,10 @@ async def _process(
         report = session.get(Report, report_id)
         if report is None:
             return
+
+        # Fresh run: drop any leftover steps from a prior attempt.
+        session.execute(delete(TraceStep).where(TraceStep.report_id == report_id))
+        session.flush()
 
         seq = 0
 
@@ -285,6 +289,8 @@ async def _process(
             report.briefing.review_passed = briefing.review_passed
             report.briefing.last_feedback = briefing.last_feedback
             report.briefing.status = "pending"
+            report.briefing.approved_by = None
+            report.briefing.approved_at = None
 
         session.flush()
         steps = session.scalars(

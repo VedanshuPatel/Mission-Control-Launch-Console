@@ -143,7 +143,11 @@ def retry_report(
     request: Request,
     db: Session = Depends(get_db),
 ) -> ReportOut:
-    report = db.scalar(select(Report).where(Report.id == report_id))
+    report = db.scalar(
+        select(Report)
+        .where(Report.id == report_id)
+        .options(selectinload(Report.briefing), selectinload(Report.trace_steps))
+    )
     if report is None:
         raise HTTPException(status_code=404, detail="Report not found")
     # Only failed reports are retryable. Allowing "received" would race with

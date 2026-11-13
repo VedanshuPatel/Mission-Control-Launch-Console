@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+from collections import deque
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
@@ -10,6 +11,9 @@ from datetime import UTC, datetime
 from pydantic import BaseModel
 
 from app.llm.base import LLMResult
+
+# Bound demo/fake process growth; tests rarely need more than a few dozen.
+_MAX_RECORDED_CALLS = 256
 
 ScriptItem = str | BaseException | Callable[[str], str]
 
@@ -47,7 +51,9 @@ class FakeLLM:
     script: dict[str, list[ScriptItem]] = field(default_factory=dict)
     barrier: asyncio.Barrier | None = None
     model: str = "fake-model"
-    calls: list[RecordedCall] = field(default_factory=list)
+    calls: deque[RecordedCall] = field(
+        default_factory=lambda: deque(maxlen=_MAX_RECORDED_CALLS)
+    )
     _cursors: dict[str, int] = field(default_factory=dict)
 
     async def complete(

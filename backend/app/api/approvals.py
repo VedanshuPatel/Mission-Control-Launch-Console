@@ -31,7 +31,7 @@ def approve_briefing(
     )
     if report is None:
         raise HTTPException(status_code=404, detail="Report not found")
-    if report.status == "processing" or report.briefing is None:
+    if report.status != "awaiting_approval" or report.briefing is None:
         raise HTTPException(status_code=409, detail="Briefing is not pending")
     if report.briefing.status != "pending":
         raise HTTPException(status_code=409, detail="Briefing is not pending")

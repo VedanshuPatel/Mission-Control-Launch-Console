@@ -104,3 +104,48 @@ def test_startup_marks_stale_processing_failed_and_retry(tmp_path: Path):
             "awaiting_approval",
             "failed",
         }
+
+
+def test_briefing_trace_and_approval_survive_restart(tmp_path: Path):
+    db_path = tmp_path / "full.db"
+    database_url = f"sqlite:///{db_path}"
+    settings_a = Settings(
+        llm_provider="fake",
+        gemini_api_key="",
+        gemini_model="fake-model",
+        database_url=database_url,
+    )
+    app_a = create_app(settings_a, llm=FakeLLM())
+    with TestClient(app_a) as client_a:
+        created = client_a.post("/api/reports", json=VALID)
+        assert created.status_code == 201
+        report_id = created.json()["id"]
+        body = client_a.get(f"/api/reports/{report_id}").json()
+        assert body["status"] == "awaiting_approval"
+        assert body["briefing"] is not None
+        assert body["trace_steps"]
+        approved = client_a.post(
+            f"/api/reports/{report_id}/briefing/approve",
+            json={"approver_name": "FD", "acknowledge_flags": False},
+        )
+        assert approved.status_code == 200
+        snapshot = approved.json()
+
+    app_a.state.engine.dispose()
+    del app_a
+
+    settings_b = Settings(
+        llm_provider="fake",
+        gemini_api_key="",
+        gemini_model="fake-model",
+        database_url=database_url,
+    )
+    app_b = create_app(settings_b, llm=FakeLLM())
+    with TestClient(app_b) as client_b:
+        detail = client_b.get(f"/api/reports/{report_id}").json()
+        assert detail["status"] == "approved"
+        assert detail["briefing"]["status"] == "approved"
+        assert detail["briefing"]["approved_by"] == "FD"
+        assert detail["briefing"]["text"] == snapshot["briefing"]["text"]
+        assert len(detail["trace_steps"]) == len(snapshot["trace_steps"])
+        assert any(s["name"] == "human_approval" for s in detail["trace_steps"])
